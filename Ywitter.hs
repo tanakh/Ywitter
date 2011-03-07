@@ -31,6 +31,8 @@ import Network.Mail.Mime
 import qualified Data.Text.Lazy
 import qualified Data.Text.Lazy.Encoding
 import Text.Jasmine (minifym)
+import qualified Data.UUID as UUID
+import qualified Data.UUID.V1 as UUID
 
 -- | The site argument for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
@@ -75,7 +77,8 @@ mkYesodData "Ywitter" [parseRoutes|
 /favicon.ico FaviconR GET
 /robots.txt RobotsR GET
 
-/ RootR GET
+/ RootR GET POST
+/setting SettingR GET POST
 |]
 
 -- Please see the documentation for the Yesod typeclass. There are a number
@@ -124,6 +127,11 @@ instance YesodPersist Ywitter where
     runDB db = liftIOHandler
              $ fmap connPool getYesod >>= Settings.runConnectionPool db
 
+genDefaultName :: IO String
+genDefaultName = do
+  Just uuid <- UUID.nextUUID
+  return $ "*" ++ UUID.toString uuid
+
 instance YesodAuth Ywitter where
     type AuthId Ywitter = UserId
 
@@ -137,7 +145,8 @@ instance YesodAuth Ywitter where
         case x of
             Just (uid, _) -> return $ Just uid
             Nothing -> do
-                fmap Just $ insert $ User (credsIdent creds) Nothing
+                uname <- liftIO $ genDefaultName
+                fmap Just $ insert $ User (credsIdent creds) uname Nothing
 
     showAuthId _ = showIntegral
     readAuthId _ = readIntegral
@@ -200,7 +209,8 @@ instance YesodAuthEmail Ywitter where
                 case emailUser e of
                     Just uid -> return $ Just uid
                     Nothing -> do
-                        uid <- insert $ User email Nothing
+                        uname <- liftIO $ genDefaultName
+                        uid <- insert $ User email uname Nothing
                         update eid [EmailUser $ Just uid, EmailVerkey Nothing]
                         return $ Just uid
     getPassword = runDB . fmap (join . fmap userPassword) . get
