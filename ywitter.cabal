@@ -29,6 +29,8 @@ executable         ywitter-test
                  , directory
                  , bytestring
                  , text
+                 , time
+                 , uuid
                  , persistent
                  , persistent-sqlite
                  , template-haskell

@@ -79,6 +79,7 @@ mkYesodData "Ywitter" [parseRoutes|
 
 / RootR GET POST
 /setting SettingR GET POST
+/user/#String UserR GET
 |]
 
 -- Please see the documentation for the Yesod typeclass. There are a number
