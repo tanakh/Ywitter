@@ -24,13 +24,15 @@ getRootR = do
     
     posts <- case mu of
       Just (uid, u) -> runDB $ do
-        ps <- selectList [PostUserEq uid] [PostDateDesc] 20 0
+        fs <- selectList [FollowFollowerEq uid] [] 0 0
+        ps <- selectList [PostUserIn $ uid : map (followFollowee . snd) fs] [PostDateDesc] 20 0
         us <- forM ps $ \(_, p) -> get $ postUser p
         return $ zip us ps
       Nothing -> do
         return []
     
     cur <- liftIO $ getCurrentTime
+    let tweets = renderPosts posts cur
 
     defaultLayout $ do
         h2id <- lift newIdent
@@ -51,12 +53,3 @@ postRootR = do
     insert $ Post uid (T.pack content) Nothing Nothing cur
   
   redirect RedirectTemporary RootR
-
-formatDiffTime cur prev
-  | diff < 1 = "現在"
-  | diff < 60 = show (round diff) ++ "秒前"
-  | diff < 60*60 = show (round $ diff / 60) ++ "分前"
-  | diff < 60*60*24 = show (round $ diff / 60 / 60) ++ "時間前"
-  | otherwise = show prev
-  where
-    diff = cur `diffUTCTime` prev

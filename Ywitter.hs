@@ -1,4 +1,4 @@
-{-# LANGUAGE QuasiQuotes, TemplateHaskell, TypeFamilies #-}
+{-# LANGUAGE QuasiQuotes, TemplateHaskell, TypeFamilies, OverloadedStrings #-}
 module Ywitter
     ( Ywitter (..)
     , YwitterRoute (..)
@@ -12,6 +12,7 @@ module Ywitter
     , module Model
     , StaticRoute (..)
     , AuthRoute (..)
+    , renderPosts
     ) where
 
 import Yesod
@@ -33,6 +34,8 @@ import qualified Data.Text.Lazy.Encoding
 import Text.Jasmine (minifym)
 import qualified Data.UUID as UUID
 import qualified Data.UUID.V1 as UUID
+import Data.Maybe
+import Data.Time
 
 -- | The site argument for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
@@ -79,7 +82,7 @@ mkYesodData "Ywitter" [parseRoutes|
 
 / RootR GET POST
 /setting SettingR GET POST
-/user/#String UserR GET
+/user/#String UserR GET POST
 |]
 
 -- Please see the documentation for the Yesod typeclass. There are a number
@@ -147,7 +150,7 @@ instance YesodAuth Ywitter where
             Just (uid, _) -> return $ Just uid
             Nothing -> do
                 uname <- liftIO $ genDefaultName
-                fmap Just $ insert $ User (credsIdent creds) uname Nothing
+                fmap Just $ insert $ User (credsIdent creds) uname Nothing "" ""
 
     showAuthId _ = showIntegral
     readAuthId _ = readIntegral
@@ -211,7 +214,7 @@ instance YesodAuthEmail Ywitter where
                     Just uid -> return $ Just uid
                     Nothing -> do
                         uname <- liftIO $ genDefaultName
-                        uid <- insert $ User email uname Nothing
+                        uid <- insert $ User email uname Nothing "" ""
                         update eid [EmailUser $ Just uid, EmailVerkey Nothing]
                         return $ Just uid
     getPassword = runDB . fmap (join . fmap userPassword) . get
@@ -227,3 +230,28 @@ instance YesodAuthEmail Ywitter where
                 , emailCredsVerkey = emailVerkey e
                 }
     getEmail = runDB . fmap (fmap emailEmail) . get
+
+renderPosts posts cur = [hamlet|
+  <table>
+    $forall post <- posts
+      <tr>
+        <td rowspan=3 witdh="64px">
+          <img src="http://a0.twimg.com/profile_images/1199699293/aznyan_normal.png" width=48 height=48>
+        <td>
+          <a href=@{UserR $ userName $ fromJust $ fst post}>#{userName $ fromJust $ fst post}
+      <tr>
+        <td>
+          #{postContent $ snd $ snd post}
+      <tr>
+        <td>
+          <a href="#">#{formatDiffTime cur $ postDate $ snd $ snd post}
+|]
+
+formatDiffTime cur prev
+  | diff < 1 = "現在"
+  | diff < 60 = show (round diff) ++ "秒前"
+  | diff < 60*60 = show (round $ diff / 60) ++ "分前"
+  | diff < 60*60*24 = show (round $ diff / 60 / 60) ++ "時間前"
+  | otherwise = show prev
+  where
+    diff = cur `diffUTCTime` prev

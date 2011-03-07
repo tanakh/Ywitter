@@ -1,4 +1,4 @@
-{-# LANGUAGE QuasiQuotes, TypeFamilies, GeneralizedNewtypeDeriving, TemplateHaskell #-}
+{-# LANGUAGE QuasiQuotes, TypeFamilies, GeneralizedNewtypeDeriving, TemplateHaskell, OverloadedStrings #-}
 module Model where
 
 import Yesod
@@ -15,6 +15,8 @@ User
     ident String
     name String Update
     password String Maybe Update
+    longName String Update default=""
+    desc Text Update default=""
     UniqueUser ident
     UniqueUserName name
 Email
@@ -23,9 +25,14 @@ Email
     verkey String Maybe Update
     UniqueEmail email
 Post
-    user UserId Eq
+    user UserId Eq In
     content Text
     replyTo PostId Maybe
     replyToUser UserId Maybe
     date UTCTime Desc
+Follow
+    follower UserId Eq
+    followee UserId Eq
+    date UTCTime Desc
+    UniqueFollow follower followee
 |]
