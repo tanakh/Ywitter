@@ -17,6 +17,7 @@ import Data.ByteString (ByteString)
 import Handler.Root
 import Handler.Setting
 import Handler.User
+import Handler.Status
 
 -- This line actually creates our YesodSite instance. It is the second half
 -- of the call to mkYesodData which occurs in Ywitter.hs. Please see

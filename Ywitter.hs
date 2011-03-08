@@ -83,6 +83,7 @@ mkYesodData "Ywitter" [parseRoutes|
 / RootR GET POST
 /setting SettingR GET POST
 /user/#String UserR GET POST
+/status/#String/#Integer StatusR GET
 |]
 
 -- Please see the documentation for the Yesod typeclass. There are a number
@@ -244,7 +245,7 @@ renderPosts posts cur = [hamlet|
           #{postContent $ snd $ snd post}
       <tr>
         <td>
-          <a href="#">#{formatDiffTime cur $ postDate $ snd $ snd post}
+          <a href=@{StatusR (userName $ fromJust $ fst post) (fromIntegral $ fst $ snd post)}>#{formatDiffTime cur $ postDate $ snd $ snd post}
 |]
 
 formatDiffTime cur prev

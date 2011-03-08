@@ -24,6 +24,7 @@ executable         ywitter-test
                  , yesod        >= 0.7     && < 0.8
                  , yesod-auth
                  , yesod-static
+                 , yesod-form
                  , mime-mail
                  , wai-extra
                  , directory
